@@ -33,6 +33,7 @@ restart_project() {
   if [ "${status}" -ne 0 ]; then
     printf '%s\n' "${output}" >&3
     ddev logs --service web >&3 2>&1 || true
+    ddev logs --service codex >&3 2>&1 || true
   fi
   assert_success
 }
@@ -76,6 +77,10 @@ health_checks() {
   run docker inspect --format '{{json .HostConfig.CapDrop}}' "ddev-${PROJNAME}-codex"
   assert_success
   assert_output --partial 'ALL'
+
+  run docker inspect --format '{{.State.Health.Status}}' "ddev-${PROJNAME}-codex"
+  assert_success
+  assert_output 'healthy'
 
   run docker inspect --format '{{json .HostConfig.SecurityOpt}}' "ddev-${PROJNAME}-web"
   assert_success

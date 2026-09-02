@@ -23,6 +23,12 @@ services:
     security_opt:
       - no-new-privileges:true
       - seccomp=unconfined
+    healthcheck:
+      test: ["CMD", "codex", "--version"]
+      interval: 5s
+      timeout: 10s
+      retries: 12
+      start_period: 10s
     environment:
       - CODEX_HOME=/mnt/codex-config
       - COLUMNS
