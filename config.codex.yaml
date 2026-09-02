@@ -1,0 +1,9 @@
+#ddev-generated
+# OpenAI Codex CLI runtime configuration.
+
+webimage_extra_packages:
+  - bubblewrap
+  - python3-pil
+
+web_environment:
+  - CODEX_HOME=/mnt/codex-config

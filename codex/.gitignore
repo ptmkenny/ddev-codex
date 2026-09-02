@@ -1,0 +1,4 @@
+#ddev-generated
+# Codex state includes credentials and must not be committed.
+*
+!.gitignore

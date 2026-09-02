@@ -1,6 +1,47 @@
+# ddev-codex - OpenAI Codex CLI add-on for DDEV
+# https://github.com/ptmkenny/ddev-codex
+
 name: codex
 
-project_files:
-  - docker-compose.codex.yaml
-
 ddev_version_constraint: '>= v1.24.10'
+
+project_files:
+  - config.codex.yaml
+  - docker-compose.codex.yaml
+  - web-build/Dockerfile.codex
+  - commands/web/codex
+  - codex/
+
+global_files: []
+dependencies: []
+
+pre_install_actions:
+  - |
+    #ddev-description:Check for a supported Codex architecture
+    case "$(uname -m)" in
+      x86_64|aarch64|arm64) ;;
+      *)
+        echo "Unsupported architecture: $(uname -m). Codex requires AMD64 or ARM64."
+        exit 1
+        ;;
+    esac
+
+post_install_actions:
+  - |
+    #ddev-description:Set permissions for the Codex command
+    chmod +x "${DDEV_APPROOT}/.ddev/commands/web/codex"
+  - |
+    #ddev-description:Display Codex post-install instructions
+    echo ""
+    echo "OpenAI Codex CLI add-on installed."
+    echo "Run 'ddev restart' to build the web container."
+    echo "Then authenticate with 'ddev codex login --device-auth'."
+    echo ""
+
+removal_actions:
+  - |
+    #ddev-description:Report preserved Codex state
+    if [ -d "${DDEV_APPROOT}/.ddev/codex" ]; then
+      echo "Codex state in .ddev/codex/ was preserved."
+      echo "Remove it manually if you also want to delete stored credentials."
+    fi

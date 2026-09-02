@@ -1,0 +1,15 @@
+#ddev-generated
+# Install OpenAI Codex CLI with OpenAI's standalone installer.
+
+ARG CODEX_VERSION=latest
+
+RUN set -eux; \
+    curl -fsSL https://chatgpt.com/codex/install.sh -o /tmp/install-codex.sh; \
+    CODEX_RELEASE="${CODEX_VERSION}" \
+    CODEX_NON_INTERACTIVE=1 \
+    CODEX_INSTALLER_USE_RELEASES_OPENAI_COM=false \
+    CODEX_INSTALL_DIR=/usr/local/bin \
+    CODEX_HOME=/opt/codex \
+    sh /tmp/install-codex.sh; \
+    rm -f /tmp/install-codex.sh; \
+    codex --version
