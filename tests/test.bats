@@ -63,9 +63,6 @@ health_checks() {
   run ddev exec --service codex 'test "${CODEX_HOME}" = /mnt/codex-config && test -w "${CODEX_HOME}"'
   assert_success
 
-  run ddev exec --service codex bwrap --unshare-user --uid 0 --gid 0 --ro-bind / / --proc /proc --dev /dev true
-  assert_success
-
   run ddev exec --service codex 'getent hosts web >/dev/null && getent hosts db >/dev/null'
   assert_success
 
@@ -75,11 +72,32 @@ health_checks() {
   run docker inspect --format '{{json .HostConfig.SecurityOpt}}' "ddev-${PROJNAME}-codex"
   assert_success
   assert_output --partial "no-new-privileges:true"
+  assert_output --partial "apparmor=unconfined"
   assert_output --partial "seccomp=unconfined"
+
+  run docker inspect --format '{{.AppArmorProfile}}' "ddev-${PROJNAME}-codex"
+  assert_success
+  assert_output 'unconfined'
+
+  run docker inspect --format '{{len .HostConfig.MaskedPaths}} {{len .HostConfig.ReadonlyPaths}}' "ddev-${PROJNAME}-codex"
+  assert_success
+  assert_output '0 0'
 
   run docker inspect --format '{{json .HostConfig.CapDrop}}' "ddev-${PROJNAME}-codex"
   assert_success
   assert_output --partial 'ALL'
+
+  run ddev exec --service codex bwrap --unshare-user --uid 0 --gid 0 --unshare-pid --ro-bind / / --proc /proc --dev /dev true
+  if [ "${status}" -ne 0 ]; then
+    printf '%s\n' "${output}" >&3
+    docker inspect \
+      --format 'AppArmor={{.AppArmorProfile}} SecurityOpt={{json .HostConfig.SecurityOpt}} MaskedPaths={{json .HostConfig.MaskedPaths}} ReadonlyPaths={{json .HostConfig.ReadonlyPaths}}' \
+      "ddev-${PROJNAME}-codex" >&3 2>&1 || true
+    ddev exec --service codex sh -c \
+      'printf "Process profile: "; cat /proc/self/attr/current; printf "User namespaces: "; cat /proc/sys/user/max_user_namespaces; if [ -r /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then printf "Restricted unprivileged user namespaces: "; cat /proc/sys/kernel/apparmor_restrict_unprivileged_userns; fi' \
+      >&3 2>&1 || true
+  fi
+  assert_success
 
   run docker inspect --format '{{.State.Health.Status}}' "ddev-${PROJNAME}-codex"
   assert_success

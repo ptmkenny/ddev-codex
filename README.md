@@ -89,16 +89,24 @@ Use the same command to update a project that follows `latest`.
 
 ## Linux sandbox inside DDEV
 
-Codex's Linux sandbox uses Bubblewrap and user namespaces. Docker's default
-seccomp profile blocks the namespace operation Bubblewrap needs, so only the
-Codex sidecar uses `seccomp=unconfined`. The web and database containers keep
-their normal seccomp profiles.
+Codex's Linux sandbox uses Bubblewrap and nested user and mount namespaces.
+Docker's default seccomp, AppArmor, and protected-system-path settings block
+operations Bubblewrap needs. Only the Codex sidecar disables those three outer
+restrictions with `seccomp=unconfined`, `apparmor=unconfined`, and
+`systempaths=unconfined`. The web and database containers retain their normal
+Docker security profiles. This is the same three-option configuration
+[Moby documents for a rootless sandbox running inside Docker](https://github.com/moby/buildkit/blob/master/docs/rootless.md#docker).
 
 The sidecar also drops all Linux capabilities and enables
 `no-new-privileges`. It is not privileged and does not mount the Docker socket
 or DDEV SSH agent. Codex can modify the project and connect to DDEV services by
 their Compose names, such as `web` and `db`, but it cannot use Docker to inspect
 or execute commands inside those containers.
+
+`systempaths=unconfined` removes Docker's masks from sensitive `/proc` and
+`/sys` paths inside the sidecar. This is necessary for Bubblewrap to create its
+inner mount layout, but it weakens the sidecar's outer Docker boundary. Keep the
+sidecar non-root and do not add capabilities or host-level mounts.
 
 DDEV injects variables from `.ddev/.env` and `.ddev/.env.local` into every
 project service, including this sidecar. Put web-only secrets in a targeted

@@ -22,7 +22,9 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
+      - apparmor=unconfined
       - seccomp=unconfined
+      - systempaths=unconfined
     healthcheck:
       test: ["CMD", "codex", "--version"]
       interval: 5s
