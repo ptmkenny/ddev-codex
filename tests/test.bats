@@ -50,7 +50,8 @@ health_checks() {
   run ddev exec 'test "${CODEX_HOME}" = /mnt/codex-config && test -w "${CODEX_HOME}"'
   assert_success
 
-  run ddev exec touch /mnt/codex-config/test-sentinel
+  # DDEV treats empty files as safe to remove, so use nonempty state here.
+  run ddev exec 'printf "%s\n" persistent-state > /mnt/codex-config/test-sentinel'
   assert_success
   run ddev restart -y
   assert_success
