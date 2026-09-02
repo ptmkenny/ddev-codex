@@ -16,9 +16,6 @@ services:
     user: "${DDEV_UID}:${DDEV_GID}"
     hostname: ${DDEV_SITENAME}-codex
     working_dir: /var/www/html
-    depends_on:
-      web:
-        condition: service_healthy
     networks:
       - default
     cap_drop:

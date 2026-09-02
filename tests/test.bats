@@ -28,6 +28,15 @@ setup() {
   assert_success
 }
 
+restart_project() {
+  run ddev restart -y
+  if [ "${status}" -ne 0 ]; then
+    printf '%s\n' "${output}" >&3
+    ddev logs --service web >&3 2>&1 || true
+  fi
+  assert_success
+}
+
 health_checks() {
   run ddev codex --version
   assert_success
@@ -83,8 +92,7 @@ health_checks() {
   # DDEV treats empty files as safe to remove, so use nonempty state here.
   run ddev exec --service codex 'printf "%s\n" persistent-state > /mnt/codex-config/test-sentinel'
   assert_success
-  run ddev restart -y
-  assert_success
+  restart_project
   assert_file_exists "${TESTDIR}/.ddev/codex/test-sentinel"
 
   run ddev add-on remove codex
@@ -109,8 +117,7 @@ teardown() {
   echo "# ddev add-on get ${DIR} with project ${PROJNAME} in $(pwd)" >&3
   run ddev add-on get "${DIR}"
   assert_success
-  run ddev restart -y
-  assert_success
+  restart_project
   health_checks
 }
 
@@ -120,7 +127,6 @@ teardown() {
   echo "# ddev add-on get ${GITHUB_REPO} with project ${PROJNAME} in $(pwd)" >&3
   run ddev add-on get "${GITHUB_REPO}"
   assert_success
-  run ddev restart -y
-  assert_success
+  restart_project
   health_checks
 }

@@ -12,7 +12,7 @@ hooks:
         compose_file="${DDEV_APPROOT}/.ddev/docker-compose.codex-project.yaml"
         if [ "${DDEV_MUTAGEN_ENABLED:-false}" = "true" ]; then
           printf '%s\n' \
-            '#ddev-generated' \
+            '#ddev-silent-no-warn' \
             '# Share the DDEV Mutagen project volume with the Codex sidecar.' \
             'services:' \
             '  codex:' \
@@ -55,7 +55,7 @@ hooks:
             >> "${compose_file}"
         else
           printf '%s\n' \
-            '#ddev-generated' \
+            '#ddev-silent-no-warn' \
             '# Share the DDEV project bind mount with the Codex sidecar.' \
             'services:' \
             '  codex:' \
