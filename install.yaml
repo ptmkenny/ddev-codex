@@ -9,7 +9,7 @@ project_files:
   - config.codex.yaml
   - docker-compose.codex.yaml
   - web-build/Dockerfile.codex
-  - commands/web/codex
+  - commands/codex/codex
   - codex/
 
 global_files: []
@@ -29,16 +29,19 @@ pre_install_actions:
 post_install_actions:
   - |
     #ddev-description:Set permissions for the Codex command
-    chmod +x "${DDEV_APPROOT}/.ddev/commands/web/codex"
+    chmod +x "${DDEV_APPROOT}/.ddev/commands/codex/codex"
   - |
     #ddev-description:Display Codex post-install instructions
     echo ""
     echo "OpenAI Codex CLI add-on installed."
-    echo "Run 'ddev restart' to build the web container."
+    echo "Run 'ddev restart' to build the project image and start the Codex sidecar."
     echo "Then authenticate with 'ddev codex login --device-auth'."
     echo ""
 
 removal_actions:
+  - |
+    #ddev-description:Remove the generated Codex project-mount override
+    rm -f "${DDEV_APPROOT}/.ddev/docker-compose.codex-project.yaml"
   - |
     #ddev-description:Report preserved Codex state
     if [ -d "${DDEV_APPROOT}/.ddev/codex" ]; then

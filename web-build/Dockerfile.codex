@@ -1,5 +1,5 @@
 #ddev-generated
-# Install OpenAI Codex CLI with OpenAI's standalone installer.
+# Install Codex in the project image shared by web and the Codex sidecar.
 
 ARG CODEX_VERSION=latest
 

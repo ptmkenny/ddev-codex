@@ -1,10 +1,82 @@
 #ddev-generated
-# OpenAI Codex CLI installation and persistent state.
+# OpenAI Codex CLI build and isolated sidecar.
 
 services:
   web:
     build:
       args:
         CODEX_VERSION: ${CODEX_VERSION:-latest}
+
+  codex:
+    image: ${DDEV_WEBIMAGE}-${DDEV_SITENAME}-built
+    container_name: ddev-${DDEV_SITENAME}-codex
+    command: ["tail", "-f", "/dev/null"]
+    init: true
+    restart: "no"
+    user: "${DDEV_UID}:${DDEV_GID}"
+    hostname: ${DDEV_SITENAME}-codex
+    working_dir: /var/www/html
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - default
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=unconfined
+    environment:
+      - CODEX_HOME=/mnt/codex-config
+      - COLUMNS
+      - COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+      - COREPACK_HOME=/mnt/ddev-global-cache/corepack
+      - DDEV_APPROOT=/var/www/html
+      - DDEV_COMPOSER_ROOT
+      - DDEV_DATABASE
+      - DDEV_DATABASE_FAMILY
+      - DDEV_DOCROOT
+      - DDEV_FILES_DIR
+      - DDEV_FILES_DIRS
+      - DDEV_GID
+      - DDEV_GOARCH
+      - DDEV_GOOS
+      - DDEV_HOSTNAME
+      - DDEV_MUTAGEN_ENABLED
+      - DDEV_PHP_VERSION
+      - DDEV_PRIMARY_URL
+      - DDEV_PRIMARY_URL_PORT
+      - DDEV_PRIMARY_URL_WITHOUT_PORT
+      - DDEV_PROJECT
+      - DDEV_PROJECT_TYPE
+      - DDEV_ROUTER_HTTP_PORT
+      - DDEV_ROUTER_HTTPS_PORT
+      - DDEV_SCHEME
+      - DDEV_SITENAME
+      - DDEV_TLD
+      - DDEV_UID
+      - DDEV_USER
+      - DDEV_VERSION
+      - DRUSH_OPTIONS_URI=${DDEV_PRIMARY_URL}
+      - HOME=/home/${DDEV_USER}
+      - IS_DDEV_PROJECT=true
+      - LINES
+      - NODE_EXTRA_CA_CERTS=/mnt/ddev-global-cache/mkcert/rootCA.pem
+      - npm_config_cache=/mnt/ddev-global-cache/npm
+      - PGDATABASE=db
+      - PGHOST=db
+      - PGPASSWORD=db
+      - PGUSER=db
+      - TERM
+      - TZ
+      - USER=${DDEV_USER}
+    labels:
+      com.ddev.site-name: ${DDEV_SITENAME}
+      com.ddev.approot: ${DDEV_APPROOT}
     volumes:
       - ./codex:/mnt/codex-config
+      - ddev-global-cache:/mnt/ddev-global-cache
+
+volumes:
+  ddev-global-cache:
+    external: true

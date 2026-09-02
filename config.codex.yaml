@@ -1,9 +1,68 @@
 #ddev-generated
-# OpenAI Codex CLI runtime configuration.
+# OpenAI Codex CLI build dependencies and project-mount selection.
 
 webimage_extra_packages:
   - bubblewrap
   - python3-pil
 
-web_environment:
-  - CODEX_HOME=/mnt/codex-config
+hooks:
+  pre-start:
+    - exec-host: |
+        #ddev-description:Configure the Codex project mount
+        compose_file="${DDEV_APPROOT}/.ddev/docker-compose.codex-project.yaml"
+        if [ "${DDEV_MUTAGEN_ENABLED:-false}" = "true" ]; then
+          printf '%s\n' \
+            '#ddev-generated' \
+            '# Share the DDEV Mutagen project volume with the Codex sidecar.' \
+            'services:' \
+            '  codex:' \
+            '    volumes:' \
+            '      - type: volume' \
+            '        source: project_mutagen' \
+            '        target: /var/www' \
+            '        volume:' \
+            '          nocopy: true' \
+            > "${compose_file}"
+          if [ -d "${DDEV_APPROOT}/.git" ]; then
+            printf '%s\n' \
+              '      - type: bind' \
+              '        source: "${DDEV_APPROOT}/.git"' \
+              '        target: /var/www/html/.git' \
+              >> "${compose_file}"
+          fi
+          old_ifs="${IFS}"
+          IFS=','
+          set -f
+          for files_dir in ${DDEV_FILES_DIRS:-}; do
+            case "${files_dir}" in
+              /var/www/html/*)
+                relative_dir="${files_dir#/var/www/html/}"
+                printf '%s\n' \
+                  '      - type: bind' \
+                  "        source: \"\${DDEV_APPROOT}/${relative_dir}\"" \
+                  "        target: \"${files_dir}\"" \
+                  >> "${compose_file}"
+                ;;
+            esac
+          done
+          set +f
+          IFS="${old_ifs}"
+          printf '%s\n' \
+            'volumes:' \
+            '  project_mutagen:' \
+            '    external: true' \
+            '    name: "${DDEV_SITENAME}_project_mutagen"' \
+            >> "${compose_file}"
+        else
+          printf '%s\n' \
+            '#ddev-generated' \
+            '# Share the DDEV project bind mount with the Codex sidecar.' \
+            'services:' \
+            '  codex:' \
+            '    volumes:' \
+            '      - type: bind' \
+            '        source: "${DDEV_APPROOT}"' \
+            '        target: /var/www/html' \
+            '        consistency: cached' \
+            > "${compose_file}"
+        fi

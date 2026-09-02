@@ -37,21 +37,51 @@ health_checks() {
   assert_success
   assert_output --partial "Codex CLI"
 
-  run ddev exec command -v codex
+  run ddev exec --service codex command -v codex
   assert_success
   assert_output --partial "/usr/local/bin/codex"
 
-  run ddev exec command -v bwrap
+  run ddev exec --service codex command -v bwrap
   assert_success
 
-  run ddev exec python3 -c 'from PIL import Image; assert Image'
+  run ddev exec --service codex python3 -c 'from PIL import Image; assert Image'
   assert_success
 
-  run ddev exec 'test "${CODEX_HOME}" = /mnt/codex-config && test -w "${CODEX_HOME}"'
+  run ddev exec --service codex 'test "${CODEX_HOME}" = /mnt/codex-config && test -w "${CODEX_HOME}"'
   assert_success
+
+  run ddev exec --service codex bwrap --unshare-user --uid 0 --gid 0 --ro-bind / / --proc /proc --dev /dev true
+  assert_success
+
+  run ddev exec --service codex 'getent hosts web >/dev/null && getent hosts db >/dev/null'
+  assert_success
+
+  run ddev exec --service codex 'test ! -S /var/run/docker.sock && test ! -S /home/.ssh-agent/socket'
+  assert_success
+
+  run docker inspect --format '{{json .HostConfig.SecurityOpt}}' "ddev-${PROJNAME}-codex"
+  assert_success
+  assert_output --partial "no-new-privileges:true"
+  assert_output --partial "seccomp=unconfined"
+
+  run docker inspect --format '{{json .HostConfig.CapDrop}}' "ddev-${PROJNAME}-codex"
+  assert_success
+  assert_output --partial 'ALL'
+
+  run docker inspect --format '{{json .HostConfig.SecurityOpt}}' "ddev-${PROJNAME}-web"
+  assert_success
+  refute_output --partial "seccomp=unconfined"
+
+  web_image="$(docker inspect --format '{{.Config.Image}}' "ddev-${PROJNAME}-web")"
+  codex_image="$(docker inspect --format '{{.Config.Image}}' "ddev-${PROJNAME}-codex")"
+  assert_equal "${codex_image}" "${web_image}"
+
+  web_project_mount="$(docker inspect --format '{{range .Mounts}}{{if or (eq .Destination "/var/www") (eq .Destination "/var/www/html")}}{{.Source}}{{end}}{{end}}' "ddev-${PROJNAME}-web")"
+  codex_project_mount="$(docker inspect --format '{{range .Mounts}}{{if or (eq .Destination "/var/www") (eq .Destination "/var/www/html")}}{{.Source}}{{end}}{{end}}' "ddev-${PROJNAME}-codex")"
+  assert_equal "${codex_project_mount}" "${web_project_mount}"
 
   # DDEV treats empty files as safe to remove, so use nonempty state here.
-  run ddev exec 'printf "%s\n" persistent-state > /mnt/codex-config/test-sentinel'
+  run ddev exec --service codex 'printf "%s\n" persistent-state > /mnt/codex-config/test-sentinel'
   assert_success
   run ddev restart -y
   assert_success
@@ -61,6 +91,7 @@ health_checks() {
   assert_success
   assert_file_exists "${TESTDIR}/.ddev/codex/test-sentinel"
   assert_file_exists "${TESTDIR}/.ddev/codex/.gitignore"
+  assert_file_not_exists "${TESTDIR}/.ddev/docker-compose.codex-project.yaml"
 }
 
 teardown() {
