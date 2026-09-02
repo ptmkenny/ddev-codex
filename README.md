@@ -10,6 +10,10 @@ in a dedicated DDEV sidecar. The sidecar uses the project's built web image, so
 it has the same PHP, Composer, Node.js, and project-specific tools as the web
 container. It supports AMD64 and ARM64 hosts.
 
+## AI Usage Disclosure
+
+This ddev addon has been written with codex assistance.
+
 ## Installation
 
 ```bash
