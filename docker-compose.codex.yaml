@@ -78,6 +78,7 @@ services:
       com.ddev.approot: ${DDEV_APPROOT}
     volumes:
       - ./codex:/mnt/codex-config
+      - .:/mnt/ddev_config:ro
       - ddev-global-cache:/mnt/ddev-global-cache
 
 volumes:

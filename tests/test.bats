@@ -39,6 +39,9 @@ restart_project() {
 }
 
 health_checks() {
+  run ddev exec --service codex test -x /mnt/ddev_config/commands/codex/codex
+  assert_success
+
   run ddev codex --version
   assert_success
   assert_output --regexp 'codex-cli [0-9]+'
