@@ -36,6 +36,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Allow nested user namespaces on the test runner
+        shell: bash
+        run: |
+          # Ubuntu restricts user-namespace capabilities even for unconfined
+          # containers. Relax this host policy only on the disposable CI runner.
+          if [ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
       - uses: ddev/github-action-add-on-test@v2
         with:
           ddev_version: ${{ matrix.ddev_version }}
